@@ -4,6 +4,8 @@ import MonDialKit
 
 struct PopoverView: View {
     @ObservedObject var store: DisplayStore
+    /// Called whenever the content changes height, so the popover can follow.
+    var onLayoutChange: () -> Void = {}
     @StateObject private var audio = AudioOutputStore()
 
     @State private var hotKeysEnabled = Preferences.hotKeysEnabled
@@ -46,7 +48,19 @@ struct PopoverView: View {
         .padding(14)
         .frame(width: 340)
         .tint(accent)
-        .onAppear { audio.refresh() }
+        .onAppear {
+            audio.refresh()
+            scheduleLayout()
+        }
+        .onChange(of: showSettings) { _ in scheduleLayout() }
+        .onChange(of: showDiagnostics) { _ in scheduleLayout() }
+        .onChange(of: store.displays.count) { _ in scheduleLayout() }
+        .onChange(of: store.displays.map(\.isReady)) { _ in scheduleLayout() }
+        .onChange(of: audio.devices.count) { _ in scheduleLayout() }
+    }
+
+    private func scheduleLayout() {
+        DispatchQueue.main.async { onLayoutChange() }
     }
 
     private var outputRow: some View {

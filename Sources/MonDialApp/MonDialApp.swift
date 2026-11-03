@@ -5,15 +5,13 @@ import MonDialKit
 @main
 struct MonDialApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    @StateObject private var store = DisplayStore.shared
 
     var body: some Scene {
-        MenuBarExtra {
-            PopoverView(store: store)
-        } label: {
-            Image(systemName: "sun.max.fill")
+        // The menu bar item and its popover are owned by StatusItemController, because
+        // MenuBarExtra cannot change its window height once it is on screen.
+        Settings {
+            EmptyView()
         }
-        .menuBarExtraStyle(.window)
     }
 }
 
@@ -23,6 +21,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         terminateIfAlreadyRunning()
 
         DisplayStore.shared.refresh(force: true)
+        StatusItemController.shared.install()
 
         HotKeyManager.shared.onAction = { action in
             DisplayStore.shared.handle(action)
