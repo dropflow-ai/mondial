@@ -65,6 +65,12 @@ final class MediaKeyMonitor {
         runLoopSource = nil
     }
 
+    /// macOS disables slow event taps; this switches the tap back on.
+    func reEnable() {
+        guard let eventTap else { return }
+        CGEvent.tapEnable(tap: eventTap, enable: true)
+    }
+
     fileprivate func shouldHandle(_ key: MediaKey) -> Bool {
         // Rate limit key repeats: the media keys fire very quickly when held down.
         let now = Date()
@@ -77,7 +83,7 @@ final class MediaKeyMonitor {
 
 private let mediaKeyTapCallback: CGEventTapCallBack = { proxy, type, event, _ in
     if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
-        CGEvent.tapEnable(tap: proxy, enable: true)
+        MediaKeyMonitor.shared.reEnable()
         return Unmanaged.passUnretained(event)
     }
 
