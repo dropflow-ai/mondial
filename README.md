@@ -36,7 +36,7 @@ The UI is currently German. Localisation is on the list below.
 
 ## Install
 
-Requires macOS 13 or newer. A prebuilt universal-free build (arm64) is attached to the [releases](https://github.com/dropflow-ai/mondial/releases). The app is ad-hoc signed, not notarised, so the quarantine flag has to be removed once:
+Requires macOS 13 or newer. A prebuilt arm64 build is attached to the [releases](https://github.com/dropflow-ai/mondial/releases). The app is ad-hoc signed, not notarised, so the quarantine flag has to be removed once:
 
 ```bash
 xattr -dr com.apple.quarantine /Applications/MonDial.app
@@ -119,7 +119,7 @@ mondialctl doctor
 ```
 
 ```
-MonDial 1.0.4
+MonDial 1.1.0
 System          macOS 15.1
 Architecture    arm64 (Apple Silicon)
 DDC backend     IOAVService (private, Apple Silicon)
