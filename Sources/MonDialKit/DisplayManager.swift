@@ -11,6 +11,8 @@ public enum DisplayManager {
     /// DCP proxies that already carry a transport. Two displays must never share one,
     /// otherwise a slider for monitor A moves the backlight of monitor B.
     private static var claimedServices: Set<UInt> = []
+    /// Proxies that were verified by an actual DDC answer, per display.
+    private static var verifiedProxy: [CGDirectDisplayID: String] = [:]
     private static let cacheLock = NSLock()
 
     // MARK: - Public API
@@ -29,7 +31,9 @@ public enum DisplayManager {
 
         #if arch(arm64)
         let candidates = avCandidates()
-        let assignment = match(displayIDs: displayIDs, candidates: candidates)
+        let assignment = verify(displayIDs: displayIDs,
+                                candidates: candidates,
+                                assignment: match(displayIDs: displayIDs, candidates: candidates))
         #elseif arch(x86_64)
         let assignment: [CGDirectDisplayID: AVCandidate] = [:]
         #else
@@ -64,6 +68,7 @@ public enum DisplayManager {
         cacheLock.lock()
         transportCache.removeAll()
         claimedServices.removeAll()
+        verifiedProxy.removeAll()
         cacheLock.unlock()
     }
 
@@ -251,6 +256,57 @@ public enum DisplayManager {
     #else
     private static func match(displayIDs: [CGDirectDisplayID], candidates: [AVCandidate]) -> [CGDirectDisplayID: AVCandidate] {
         [:]
+    }
+    #endif
+
+    #if arch(arm64)
+    /// The text based steps above only match when registry paths, product names or serials
+    /// line up exactly - and on a real desk they often don't, because the location string
+    /// CoreDisplay reports and the IORegistry path are spelled differently. What always
+    /// works is asking the panel itself: a proxy that answers a Get VCP request belongs to
+    /// that display. This is what decides which monitor a slider talks to.
+    private static func verify(displayIDs: [CGDirectDisplayID],
+                               candidates: [AVCandidate],
+                               assignment: [CGDirectDisplayID: AVCandidate]) -> [CGDirectDisplayID: AVCandidate] {
+        var assignment = assignment
+        guard !candidates.isEmpty else { return assignment }
+
+        let usedPaths = Set(assignment.values.map { $0.proxyPath })
+        var remaining = candidates.filter { !usedPaths.contains($0.proxyPath) }
+        guard !remaining.isEmpty else { return assignment }
+
+        var unmatched = displayIDs.filter { CGDisplayIsBuiltin($0) == 0 && assignment[$0] == nil }
+        guard !unmatched.isEmpty else { return assignment }
+
+        // Reuse an earlier verdict for as long as the cache lives, so opening the panel does
+        // not probe the bus every time.
+        for displayID in unmatched {
+            guard let known = verifiedProxy[displayID],
+                  let index = remaining.firstIndex(where: { $0.proxyPath == known }) else { continue }
+            assignment[displayID] = remaining.remove(at: index)
+        }
+        unmatched = unmatched.filter { assignment[$0] == nil }
+
+        for displayID in unmatched {
+            guard !remaining.isEmpty else { break }
+            let answered = remaining.firstIndex { candidate in
+                guard let service = candidate.service else { return false }
+                let transport = Arm64Transport(service: service, chipAddress: candidate.chipAddress)
+                return transport.probe(VCP.brightness.rawValue)
+                    || transport.probe(VCP.contrast.rawValue)
+                    || transport.probe(VCP.volume.rawValue)
+            }
+            if let index = answered {
+                let candidate = remaining.remove(at: index)
+                assignment[displayID] = candidate
+                verifiedProxy[displayID] = candidate.proxyPath
+            }
+        }
+
+        // A display that answers nothing (HDMI on Apple Silicon, a sleeping panel) is left
+        // alone: gamma dimming handles it, and binding a proxy that belongs elsewhere would
+        // move the wrong monitor.
+        return assignment
     }
     #endif
 

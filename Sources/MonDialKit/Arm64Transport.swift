@@ -89,6 +89,18 @@ final class Arm64Transport: DDCTransport {
         return nil
     }
 
+    /// Single-shot probe used while matching displays to DCP proxies: no retry loop and no
+    /// chip switching, just the question "is anybody on the other end of this proxy?".
+    func probe(_ code: UInt8) -> Bool {
+        for candidate in [ReadStrategy.dataAddress, .zeroOffset] {
+            if attemptRead(code, strategy: candidate) != nil {
+                strategy = candidate
+                return true
+            }
+        }
+        return false
+    }
+
     private static func alternateChip(for address: UInt32) -> UInt32 {
         address == DDCConstants.chipAddress ? DDCConstants.mcdpChipAddress : DDCConstants.chipAddress
     }
