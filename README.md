@@ -113,9 +113,11 @@ Displays are enumerated with `CGGetOnlineDisplayList`, matched to their `DCPAVSe
 
 **Gamma dimming is not brightness.** When DDC fails, the panel's backlight stays where it is and the image is scaled down instead. MonDial reports this as „DDC wirkungslos – Software-Dimmung".
 
-![Panel with one display that never answers](docs/ddc-no-reply.png)
+![Panel with two monitors, one of them without DDC](docs/ddc-no-reply.png)
 
-*A real panel after a silent DDC failure: the upper entry answers nothing at all — no brightness, no volume — and has been switched to gamma dimming with the **Gamma** chip. The lower entry talks to the monitor normally. The audio row shows the Mac's current output device.*
+*A real panel with two monitors on a Mac mini. The upper one sits on the HDMI port, never answers a DDC request and is dimmed through the gamma table instead — the **Gamma** chip is highlighted. The lower one is connected over USB-C, reports brightness and volume, and its speakers are the selected output. Nothing here is a bug: the same setup produces exactly this display.*
+
+**A second display on HDMI will never answer.** The Mac mini has exactly one HDMI port, and as noted above that path swallows DDC on Apple Silicon. If both monitors are meant to be controlled, put the second one on a USB-C/Thunderbolt port with a USB-C-to-DisplayPort cable — adapters that convert to HDMI in the cable tend to break DDC as well.
 
 ## How it compares
 
