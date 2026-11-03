@@ -40,7 +40,7 @@ public enum DisplayManager {
             let candidate = assignment[displayID]
             let name = resolveName(displayID: displayID, info: info, candidate: candidate, index: index)
             let transport = transport(for: displayID, candidate: candidate, isBuiltin: isBuiltin)
-            let uuid = displayUUID(displayID)
+            let uuid = displayUUID(displayID, info: info)
 
             result.append(PhysicalDisplay(
                 id: uuid ?? "display-\(displayID)",
@@ -100,10 +100,11 @@ public enum DisplayManager {
         return newTransport
     }
 
-    private static func displayUUID(_ displayID: CGDirectDisplayID) -> String? {
-        guard let uuid = CGDisplayCreateUUIDFromDisplayID(displayID)?.takeRetainedValue() else { return nil }
-        let text: String = CFUUIDCreateString(kCFAllocatorDefault, uuid) as String
-        return text
+    private static func displayUUID(_ displayID: CGDirectDisplayID, info: [String: Any]?) -> String? {
+        if let uuid = info?["kCGDisplayUUID"] as? String, !uuid.isEmpty {
+            return uuid
+        }
+        return nil
     }
 
     private static func resolveName(displayID: CGDirectDisplayID,
