@@ -68,7 +68,7 @@ final class PrivateAPI {
     /// `IODisplayLocation` and `DisplayProductName`.
     func displayInfo(for displayID: CGDirectDisplayID) -> [String: Any]? {
         guard let displayInfoDictionary, let pointer = displayInfoDictionary(displayID) else { return nil }
-        let dictionary = Unmanaged<CFDictionary>.fromOpaque(pointer).takeRetainedValue()
-        return dictionary as NSDictionary as? [String: Any]
+        let dictionary = Unmanaged<NSDictionary>.fromOpaque(pointer).takeRetainedValue()
+        return dictionary as? [String: Any]
     }
 }

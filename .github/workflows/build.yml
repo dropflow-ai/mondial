@@ -1,0 +1,47 @@
+name: Build
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: macOS build
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain
+        run: |
+          swift --version
+          sw_vers
+
+      - name: Build app and CLI
+        run: ./build.sh
+
+      - name: Show bundle
+        run: |
+          ls -la dist
+          codesign -dv dist/ScreenMix.app 2>&1 | head -5 || true
+
+      - name: Smoke test CLI
+        run: |
+          ./dist/screenmixctl --version
+          ./dist/screenmixctl list || true
+          ./dist/screenmixctl doctor || true
+
+      - name: Package
+        run: |
+          cd dist
+          ditto -c -k --sequesterRsrc --keepParent ScreenMix.app ScreenMix-app.zip
+          zip -r ScreenMix-cli.zip screenmixctl
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ScreenMix
+          path: |
+            dist/ScreenMix-app.zip
+            dist/ScreenMix-cli.zip
+          if-no-files-found: error
