@@ -1,5 +1,5 @@
 import Foundation
 
 public enum MonDialVersion {
-    public static let string = "1.0.4"
+    public static let string = "1.1.0"
 }
