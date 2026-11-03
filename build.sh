@@ -27,6 +27,8 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" "$DIST"
 cp "$BIN_PATH/$APP_NAME" "$APP/Contents/MacOS/$APP_NAME"
 cp "Resources/Info.plist" "$APP/Contents/Info.plist"
 cp "$BIN_PATH/screenmixctl" "$DIST/screenmixctl"
+# Das CLI liegt zusätzlich im Bundle, damit es ohne Installation nutzbar ist.
+cp "$BIN_PATH/screenmixctl" "$APP/Contents/Resources/screenmixctl"
 chmod +x "$DIST/screenmixctl"
 
 if [ -f "Resources/AppIcon.png" ]; then

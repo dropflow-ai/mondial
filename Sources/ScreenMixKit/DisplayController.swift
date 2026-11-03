@@ -23,6 +23,7 @@ public final class DisplayController: ObservableObject, Identifiable {
     @Published public private(set) var usesSoftwareDimming = false
     @Published public private(set) var statusMessage = ""
     @Published public private(set) var isReady = false
+    @Published public private(set) var diagnostics: [String] = []
 
     private let display: PhysicalDisplay
     private let queue: DispatchQueue
@@ -140,6 +141,54 @@ public final class DisplayController: ObservableObject, Identifiable {
     public func resetSoftwareDimming() {
         SoftwareBrightness.reset(displayID: displayID)
         usesSoftwareDimming = false
+    }
+
+    /// Collects everything that helps to debug a non-responding panel: transport, per-VCP
+    /// results, response times and whether a write is acknowledged and read back.
+    public func runDiagnostics() {
+        queue.async { [weak self] in
+            guard let self else { return }
+            var lines: [String] = []
+            lines.append("Bildschirm   \(self.name)")
+            lines.append("Display-ID   \(self.displayID)")
+            lines.append("Transport    \(self.display.debugDescription)")
+            lines.append("DDC          \(self.display.hasDDC ? "ja" : "nein")")
+            lines.append("")
+
+            for attribute in [VCP.brightness, .contrast, .volume, .mute] {
+                let start = DispatchTime.now().uptimeNanoseconds
+                let reply = self.display.read(attribute)
+                let milliseconds = Double(DispatchTime.now().uptimeNanoseconds - start) / 1_000_000
+                let label = attribute.localizedName.padding(toLength: 12, withPad: " ", startingAt: 0)
+                if let reply {
+                    lines.append("\(label) \(reply.current) / \(reply.max)   [\(Int(milliseconds)) ms]")
+                } else {
+                    lines.append("\(label) keine Antwort   [\(Int(milliseconds)) ms]")
+                }
+            }
+
+            // Write the value that is already set, so a successful test cannot change the
+            // picture. Only possible when the panel answers reads.
+            if let before = self.display.read(.brightness) {
+                let acknowledged = self.display.write(.brightness, value: before.current)
+                usleep(150_000)
+                let after = self.display.read(.brightness)
+                lines.append("")
+                lines.append("Schreibtest  \(acknowledged ? "bestätigt" : "fehlgeschlagen")")
+                if let after {
+                    lines.append("Rücklesen    \(after.current) / \(after.max)")
+                } else {
+                    lines.append("Rücklesen    keine Antwort")
+                }
+            } else {
+                lines.append("")
+                lines.append("Schreibtest  übersprungen (kein lesbarer Helligkeitswert)")
+            }
+
+            DispatchQueue.main.async {
+                self.diagnostics = lines
+            }
+        }
     }
 
     private func scheduleFlush() {

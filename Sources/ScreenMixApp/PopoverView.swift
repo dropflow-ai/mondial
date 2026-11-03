@@ -9,6 +9,7 @@ struct PopoverView: View {
     @State private var mediaKeysEnabled = Preferences.mediaKeysEnabled
     @State private var launchAtLogin = LoginItem.isEnabled
     @State private var showSettings = false
+    @State private var showDiagnostics = false
     @State private var permissionWarning = false
 
     private let accent = Color(red: 0.0, green: 0.72, blue: 0.76)
@@ -31,6 +32,10 @@ struct PopoverView: View {
 
             if showSettings {
                 settings
+            }
+
+            if showDiagnostics {
+                diagnosticsSection
             }
 
             footer
@@ -116,6 +121,17 @@ struct PopoverView: View {
             }
             .buttonStyle(.borderless)
 
+            Button {
+                showDiagnostics.toggle()
+                if showDiagnostics {
+                    store.displays.forEach { $0.runDiagnostics() }
+                }
+            } label: {
+                Label("Diagnose", systemImage: "stethoscope")
+                    .font(.callout)
+            }
+            .buttonStyle(.borderless)
+
             Spacer()
 
             Button("Beenden") {
@@ -124,6 +140,58 @@ struct PopoverView: View {
             .buttonStyle(.borderless)
             .font(.callout)
         }
+    }
+
+    private var diagnosticsSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text("Diagnose")
+                    .font(.system(size: 11, weight: .semibold))
+                Spacer()
+                Button("Kopieren") { copyDiagnostics() }
+                    .font(.caption)
+                    .buttonStyle(.borderless)
+                Button("Aktualisieren") { store.displays.forEach { $0.runDiagnostics() } }
+                    .font(.caption)
+                    .buttonStyle(.borderless)
+            }
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 2) {
+                    if store.displays.allSatisfy({ $0.diagnostics.isEmpty }) {
+                        Text("Wird ermittelt …")
+                            .font(.system(size: 9, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                    }
+                    ForEach(store.displays) { display in
+                        ForEach(Array(display.diagnostics.enumerated()), id: \.offset) { _, line in
+                            Text(line)
+                                .font(.system(size: 9, design: .monospaced))
+                                .textSelection(.enabled)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(6)
+            }
+            .frame(height: 140)
+            .background(RoundedRectangle(cornerRadius: 6).fill(Color.primary.opacity(0.06)))
+        }
+    }
+
+    private func copyDiagnostics() {
+        var lines: [String] = []
+        lines.append("ScreenMix \(ScreenMixVersion.string)")
+        lines.append("System: \(ProcessInfo.processInfo.operatingSystemVersionString)")
+        lines.append("Architektur: \(Diagnostics.architecture)")
+        lines.append("Backend: \(Diagnostics.ddcBackendDescription)")
+        lines.append("")
+        for display in store.displays {
+            lines.append(contentsOf: display.diagnostics)
+            lines.append("")
+        }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(lines.joined(separator: "\n"), forType: .string)
     }
 
     private func openAccessibilitySettings() {
