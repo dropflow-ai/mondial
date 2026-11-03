@@ -76,6 +76,14 @@ Nach dem Start erscheint ein Sonnensymbol in der Menüleiste. Ein Klick öffnet:
 * **Neu scannen**, wenn ein Monitor an- oder abgesteckt wurde,
 * ein Zahnrad mit den Einstellungen.
 
+### Ausgabe umschalten
+
+Unter den Bildschirmen sitzt eine Zeile **Ausgabe**. Sie listet alle Audioausgänge des Macs
+(interne Lautsprecher, Monitor, Kopfhörer, AirPods …) und schaltet den Standardausgang direkt
+im Panel um. Das ist praktisch, weil die DDC-Lautstärke des Monitors nur dann hörbar ist, wenn
+macOS den Ton auch dorthin schickt. Der Zusatz in Klammern nennt den Transportweg (intern, USB,
+DisplayPort, Bluetooth).
+
 ### Tastenkürzel (standardmässig aktiv)
 
 | Kürzel | Funktion |
