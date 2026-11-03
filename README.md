@@ -169,7 +169,42 @@ Alles läuft ohne Kernel-Extension, ohne SIP-Eingriff und ohne Root-Rechte.
 
 ---
 
-## 6. Fehlersuche
+## 6. Bekannte Geräte
+
+### Samsung ViewFinity S6 S65TC (S34C650TAU / LS34C650TAUXEN)
+
+34" Ultra-WQHD (3440 × 1440) mit 100 Hz, USB-C mit 90 W Ladeleistung, Thunderbolt-4-Ausgang,
+RJ45 und **2 × 5 W Lautsprecher**. Damit sind beide Achsen über DDC erreichbar:
+
+| Funktion | VCP | Anmerkung |
+|---|---|---|
+| Helligkeit | `0x10` | Wertebereich 0–100, entspricht direkt Prozent |
+| Lautstärke | `0x62` | steuert die eingebauten Lautsprecher |
+| Stummschaltung | `0x8D` | 1 = stumm, 2 = Ton an |
+
+**Anschluss.** Über USB-C/Thunderbolt läuft DDC über die Chip-Adresse `0x37`. Hängt der
+Monitor am HDMI-Port eines Mac mini, verwendet macOS den MCDP29xx-Pfad mit `0xB7` –
+ScreenMix erkennt das am IORegistry und schaltet automatisch um, du musst nichts einstellen.
+
+**Was im Monitor-Menü aus sein sollte**, sonst überschreibt der Monitor die per DDC
+gesetzte Helligkeit wieder:
+
+* `Bild → Eco Saving Plus` → **Aus**
+* `Bild → Eye Saver Mode` → **Aus**
+* `Bild → Adaptive Picture` bzw. HDR → **Aus** (bei aktivem HDR ignoriert der Monitor VCP `0x10`)
+
+**Lautstärke.** `Ton → Lautstärke` sollte nicht auf 0 stehen und `Ton → Tonquelle` auf dem
+gerade benutzten Eingang (USB-C bzw. HDMI). Der Ton läuft über DisplayPort-Audio, deshalb
+lässt sich die macOS-Systemlautstärke dafür nicht benutzen – DDC ist hier der einzige Weg.
+
+Erwartete `screenmixctl doctor`-Ausgabe für dieses Gerät: Helligkeit und Lautstärke jeweils
+mit `(max 100)` und Antwortzeiten unter 100 ms. Meldet der Monitor nur bei der Helligkeit
+„keine Antwort“, schreibt ScreenMix trotzdem (Modus „DDC (nur schreiben)“) statt auf
+Gamma-Dimmung auszuweichen.
+
+---
+
+## 7. Fehlersuche
 
 **Es passiert nichts / „DDC ohne Rückmeldung“**
 
@@ -203,7 +238,7 @@ volles Xcode, die Command Line Tools genügen.
 
 ---
 
-## 7. Grenzen
+## 8. Grenzen
 
 * **Keine HDR-Helligkeit.** DDC steuert die Hintergrundbeleuchtung, nicht das Tone-Mapping.
 * **Keine Apple-Displays.** Beim Studio Display / Pro Display XDR übernimmt macOS die
@@ -217,7 +252,7 @@ volles Xcode, die Command Line Tools genügen.
 
 ---
 
-## 8. Projektstruktur
+## 9. Projektstruktur
 
 ```
 Package.swift
@@ -237,7 +272,7 @@ Sources/screenmixctl/        CLI
 Sources/ScreenMixApp/        Menüleisten-App (SwiftUI MenuBarExtra + AppKit)
 ```
 
-## 9. Danke
+## 10. Danke
 
 Die DDC/CI-Details auf Apple Silicon und Intel basieren auf den offenen Projekten
 [m1ddc](https://github.com/waydabber/m1ddc) (MIT), [MonitorControl](https://github.com/MonitorControl/MonitorControl)

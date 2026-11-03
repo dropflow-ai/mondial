@@ -31,6 +31,10 @@ public final class DisplayController: ObservableObject, Identifiable {
     private var pendingBrightness: Double?
     private var pendingVolume: Double?
     private var flushScheduled = false
+    /// Set when the display acknowledges DDC writes but never answers reads. Plenty of
+    /// Samsung panels behave like this; brightness still works, we just cannot query it.
+    private var writeOnlyBrightness = false
+    private var brightnessReadable = false
 
     public init(display: PhysicalDisplay) {
         self.display = display
@@ -71,7 +75,8 @@ public final class DisplayController: ObservableObject, Identifiable {
             DispatchQueue.main.async {
                 if let brightnessMax { self.brightnessMax = brightnessMax }
                 if let volumeMax { self.volumeMax = volumeMax }
-                self.supportsBrightness = brightnessValue != nil
+                self.brightnessReadable = brightnessValue != nil
+                self.supportsBrightness = brightnessValue != nil || self.writeOnlyBrightness
                 self.supportsVolume = volumeValue != nil
                 self.supportsMute = muteValue != nil
                 if let brightnessValue { self.brightness = brightnessValue }
@@ -79,8 +84,14 @@ public final class DisplayController: ObservableObject, Identifiable {
                 if let muteValue { self.isMuted = muteValue }
 
                 if self.display.hasDDC {
-                    self.usesSoftwareDimming = brightnessValue == nil
-                    self.statusMessage = brightnessValue == nil ? "DDC ohne Rückmeldung" : ""
+                    self.usesSoftwareDimming = brightnessValue == nil && !self.writeOnlyBrightness
+                    if brightnessValue != nil {
+                        self.statusMessage = ""
+                    } else if self.writeOnlyBrightness {
+                        self.statusMessage = "DDC (nur schreiben)"
+                    } else {
+                        self.statusMessage = "DDC ohne Rückmeldung"
+                    }
                 } else {
                     self.usesSoftwareDimming = true
                     self.statusMessage = "kein DDC"
@@ -151,14 +162,24 @@ public final class DisplayController: ObservableObject, Identifiable {
     }
 
     private func writeBrightness(_ percent: Double) {
-        if supportsBrightness, display.hasDDC {
-            let value = UInt16((percent / 100.0 * Double(brightnessMax)).rounded())
-            display.write(.brightness, value: value)
-            return
+        if display.hasDDC {
+            let maximum = brightnessReadable ? brightnessMax : 100
+            let value = UInt16((percent / 100.0 * Double(maximum)).rounded())
+            if display.write(.brightness, value: value) {
+                if !brightnessReadable && !writeOnlyBrightness {
+                    DispatchQueue.main.async {
+                        self.writeOnlyBrightness = true
+                        self.supportsBrightness = true
+                        self.usesSoftwareDimming = false
+                        self.statusMessage = "DDC (nur schreiben)"
+                    }
+                }
+                return
+            }
         }
-        if hasDDC || isBuiltin {
-            SoftwareBrightness.apply(displayID: displayID, percent: percent)
-        }
+        // No DDC at all, or the panel refused the write: dim through the gamma table so the
+        // slider still does something useful.
+        SoftwareBrightness.apply(displayID: displayID, percent: percent)
     }
 
     private func writeVolume(_ percent: Double) {

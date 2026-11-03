@@ -60,11 +60,16 @@ final class Arm64Transport: DDCTransport {
 
     func readVCP(_ code: UInt8) -> (current: UInt16, max: UInt16)? {
         let candidates: [ReadStrategy] = strategy.map { [$0] } ?? [.dataAddress, .zeroOffset]
-        for candidate in candidates {
-            if let value = attemptRead(code, strategy: candidate) {
-                strategy = candidate
-                return value
+        // Some panels (Samsung ViewFinity among them) answer slowly or drop the first
+        // request after the monitor woke up, so retry with a growing pause before giving up.
+        for attempt in 0 ..< 3 {
+            for candidate in candidates {
+                if let value = attemptRead(code, strategy: candidate) {
+                    strategy = candidate
+                    return value
+                }
             }
+            if attempt < 2 { usleep(60_000) }
         }
         return nil
     }
