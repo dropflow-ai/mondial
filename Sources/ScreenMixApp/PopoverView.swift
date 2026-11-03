@@ -4,6 +4,7 @@ import ScreenMixKit
 
 struct PopoverView: View {
     @ObservedObject var store: DisplayStore
+    @StateObject private var audio = AudioOutputStore()
 
     @State private var hotKeysEnabled = Preferences.hotKeysEnabled
     @State private var mediaKeysEnabled = Preferences.mediaKeysEnabled
@@ -28,6 +29,8 @@ struct PopoverView: View {
                 }
             }
 
+            outputRow
+
             Divider()
 
             if showSettings {
@@ -43,6 +46,48 @@ struct PopoverView: View {
         .padding(14)
         .frame(width: 340)
         .tint(accent)
+        .onAppear { audio.refresh() }
+    }
+
+    private var outputRow: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "hifispeaker.fill")
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+            Text("Ausgabe")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+            Spacer(minLength: 8)
+            Menu {
+                ForEach(audio.devices) { device in
+                    Button {
+                        audio.select(device)
+                    } label: {
+                        if device.id == audio.currentID {
+                            Label("\(device.name)  (\(device.detail))", systemImage: "checkmark")
+                        } else {
+                            Text("\(device.name)  (\(device.detail))")
+                        }
+                    }
+                }
+                Divider()
+                Button("Liste aktualisieren") { audio.refresh() }
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: audio.devices.first { $0.id == audio.currentID }?.symbol ?? "speaker.wave.2")
+                        .font(.system(size: 10))
+                    Text(audio.currentName)
+                        .font(.callout)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.system(size: 8))
+                }
+            }
+            .menuStyle(.borderlessButton)
+            .fixedSize()
+            .help("Audioausgabe des Macs umschalten")
+        }
     }
 
     private var header: some View {
