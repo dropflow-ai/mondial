@@ -32,6 +32,16 @@ manche Dockingstations schlucken DDC – dann hilft nur ein direkter Anschluss.
 
 ## 2. Bauen
 
+Fertiger Build (Apple Silicon): im Repository unter **Releases** →
+`ScreenMix-app.zip` herunterladen, entpacken, nach `/Programme` ziehen. Da die App nur
+ad-hoc signiert ist, muss die Quarantäne-Markierung einmal entfernt werden:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/ScreenMix.app
+```
+
+Selbst bauen (empfohlen, funktioniert auch auf Intel-Macs):
+
 ```bash
 cd screenmix
 ./build.sh --install
