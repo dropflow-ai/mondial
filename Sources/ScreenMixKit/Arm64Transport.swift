@@ -9,13 +9,18 @@ import IOKit
 /// packets are pushed through the display coprocessor (`DCPAVServiceProxy`) using the private
 /// `IOAVServiceReadI2C` / `IOAVServiceWriteI2C` functions.
 ///
-/// Two different read conventions exist in the wild (they differ in the checksum seed and in
-/// the I2C offset that is used for the reply), so both are tried and the working one is
-/// remembered for the lifetime of the object.
+/// Two things differ between monitors and Macs:
+///   * the I²C chip address: `0x37` for DisplayPort/USB-C, `0xB7` when the display hangs on
+///     an HDMI port driven by the MCDP29xx controller
+///   * the read convention: checksum with or without the `0x51` data address, reply at
+///     offset `0x51` (12 bytes) or offset `0` (11 bytes)
+///
+/// Both are detected at runtime: the first read that fails triggers a switch to the other
+/// chip address, and a failed read also tries the other reply convention.
 final class Arm64Transport: DDCTransport {
     private let api = PrivateAPI.shared
     private let service: UnsafeMutableRawPointer
-    private let chipAddress: UInt32
+    private var chipAddress: UInt32
 
     private enum ReadStrategy {
         case dataAddress   // checksum includes 0x51, reply read at offset 0x51, 12 bytes
@@ -23,6 +28,9 @@ final class Arm64Transport: DDCTransport {
     }
 
     private var strategy: ReadStrategy?
+    private var chipCalibrated = false
+    private var didSwitchChip = false
+    private var writeVerified = false
 
     var debugDescription: String {
         let strategyName: String
@@ -31,7 +39,8 @@ final class Arm64Transport: DDCTransport {
         case .zeroOffset: strategyName = "zero-offset"
         case nil: strategyName = "auto"
         }
-        return "IOAVService (Apple Silicon), chip=0x\(String(chipAddress, radix: 16)), read=\(strategyName)"
+        let switched = didSwitchChip ? " (automatisch korrigiert)" : ""
+        return "IOAVService, chip=0x\(String(chipAddress, radix: 16))\(switched), read=\(strategyName)"
     }
 
     init(service: UnsafeMutableRawPointer, chipAddress: UInt32) {
@@ -59,9 +68,34 @@ final class Arm64Transport: DDCTransport {
     // MARK: - VCP access
 
     func readVCP(_ code: UInt8) -> (current: UInt16, max: UInt16)? {
+        if let value = readOnce(code) {
+            chipCalibrated = true
+            return value
+        }
+
+        // Nothing came back. Either the display is asleep, DDC/CI is off, or we are talking
+        // to the wrong chip address. Try the other one once before reporting a failure.
+        guard !chipCalibrated else { return nil }
+        chipCalibrated = true
+
+        let original = chipAddress
+        chipAddress = Self.alternateChip(for: original)
+        if let value = readOnce(code) {
+            didSwitchChip = true
+            return value
+        }
+        chipAddress = original
+        return nil
+    }
+
+    private static func alternateChip(for address: UInt32) -> UInt32 {
+        address == DDCConstants.chipAddress ? DDCConstants.mcdpChipAddress : DDCConstants.chipAddress
+    }
+
+    /// Three attempts with both reply conventions - slow panels (Samsung among them) drop the
+    /// first request after waking up.
+    private func readOnce(_ code: UInt8) -> (current: UInt16, max: UInt16)? {
         let candidates: [ReadStrategy] = strategy.map { [$0] } ?? [.dataAddress, .zeroOffset]
-        // Some panels (Samsung ViewFinity among them) answer slowly or drop the first
-        // request after the monitor woke up, so retry with a growing pause before giving up.
         for attempt in 0 ..< 3 {
             for candidate in candidates {
                 if let value = attemptRead(code, strategy: candidate) {
@@ -123,6 +157,24 @@ final class Arm64Transport: DDCTransport {
             }
         }
         usleep(8_000)
+
+        // A write that the I²C layer accepts is not proof that the monitor understood it.
+        // If the panel is readable and the value did not change, the chip address is wrong.
+        // Only check this once: doing it on every slider step would double the latency.
+        if acknowledged, !writeVerified {
+            writeVerified = true
+            guard let reply = readOnce(code) else { return acknowledged }
+            if reply.current != value {
+                let original = chipAddress
+                chipAddress = Self.alternateChip(for: original)
+                if write(&packet, offset: DDCConstants.dataAddress) == KERN_SUCCESS,
+                   let check = readOnce(code), check.current == value {
+                    didSwitchChip = true
+                    return true
+                }
+                chipAddress = original
+            }
+        }
         return acknowledged
     }
 }
