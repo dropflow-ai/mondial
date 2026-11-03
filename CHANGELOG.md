@@ -3,6 +3,14 @@
 Versions follow `MAJOR.MINOR.PATCH`. The app is a menu bar utility, so minor versions are
 feature work and patch versions are fixes.
 
+## 1.2.1 — 2026-11-03
+
+- **Fix: the settings section could not be closed again.** `MenuBarExtra` keeps the window
+  height it had when it first appeared, so opening the settings grew the content but not the
+  panel — the header with the gear slid out of view above the screen edge. The panel is now
+  an `NSPopover` owned by `StatusItemController`, which sets `contentSize` from the SwiftUI
+  content whenever the content changes, so it grows and shrinks with what is in it.
+
 ## 1.2.0 — 2026-11-03
 
 - **Bilingual interface.** German strings stay the original, English is the translation;
