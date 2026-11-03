@@ -1,6 +1,7 @@
 import Foundation
 import CoreAudio
 import SwiftUI
+import MonDialKit
 
 /// One selectable audio output of the Mac (internal speakers, the monitor's speakers,
 /// headphones, AirPods …).
@@ -130,7 +131,7 @@ final class AudioOutputStore: ObservableObject {
     @Published private(set) var currentID: AudioDeviceID?
 
     var currentName: String {
-        devices.first { $0.id == currentID }?.name ?? "Keine Ausgabe"
+        devices.first { $0.id == currentID }?.name ?? L("Keine Ausgabe", "No output")
     }
 
     func refresh() {
