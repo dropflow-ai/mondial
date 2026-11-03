@@ -8,6 +8,9 @@ import IOKit
 /// relatively expensive and because polled reads (slider preview, hotkeys) must stay fast.
 public enum DisplayManager {
     private static var transportCache: [CGDirectDisplayID: DDCTransport] = [:]
+    /// DCP proxies that already carry a transport. Two displays must never share one,
+    /// otherwise a slider for monitor A moves the backlight of monitor B.
+    private static var claimedServices: Set<UInt> = []
     private static let cacheLock = NSLock()
 
     // MARK: - Public API
@@ -60,7 +63,17 @@ public enum DisplayManager {
     public static func invalidateCache() {
         cacheLock.lock()
         transportCache.removeAll()
+        claimedServices.removeAll()
         cacheLock.unlock()
+    }
+
+    private static func claim(_ service: UnsafeMutableRawPointer) -> Bool {
+        let key = UInt(bitPattern: service)
+        cacheLock.lock()
+        defer { cacheLock.unlock() }
+        guard !claimedServices.contains(key) else { return false }
+        claimedServices.insert(key)
+        return true
     }
 
     // MARK: - Transport creation
@@ -81,10 +94,12 @@ public enum DisplayManager {
 
         #if arch(arm64)
         if let service = candidate?.service, PrivateAPI.shared.supportsIOAVService {
+            guard claim(service) else { return nil }
             newTransport = Arm64Transport(service: service, chipAddress: candidate?.chipAddress ?? DDCConstants.chipAddress)
         } else if PrivateAPI.shared.supportsIOAVService,
                   onlineDisplayIDs().filter({ CGDisplayIsBuiltin($0) == 0 }).count == 1,
-                  let service = PrivateAPI.shared.avService(for: 0) {
+                  let service = PrivateAPI.shared.avService(for: 0),
+                  claim(service) {
             // Single external display but no proxy matched: fall back to the default service.
             newTransport = Arm64Transport(service: service, chipAddress: DDCConstants.chipAddress)
         }
@@ -222,10 +237,13 @@ public enum DisplayManager {
             }
         }
 
-        // 4. assign the leftovers in order to displays that still have no transport
-        for displayID in displayIDs where assignment[displayID] == nil {
-            guard CGDisplayIsBuiltin(displayID) == 0, !remaining.isEmpty else { continue }
-            assignment[displayID] = remaining.removeFirst()
+        // 4. Last resort, only when the situation is unambiguous: exactly one proxy and
+        //    exactly one external display without one. Handing out leftovers blindly
+        //    attaches the wrong proxy to a monitor, and then the slider of monitor B dims
+        //    monitor A - which is worse than having no transport at all.
+        let unmatched = displayIDs.filter { CGDisplayIsBuiltin($0) == 0 && assignment[$0] == nil }
+        if remaining.count == 1, unmatched.count == 1 {
+            assignment[unmatched[0]] = remaining.removeFirst()
         }
 
         return assignment

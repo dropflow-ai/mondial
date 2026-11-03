@@ -40,7 +40,8 @@ final class Arm64Transport: DDCTransport {
         case nil: strategyName = "auto"
         }
         let switched = didSwitchChip ? " (automatisch korrigiert)" : ""
-        return "IOAVService, chip=0x\(String(chipAddress, radix: 16))\(switched), read=\(strategyName)"
+        let pointer = String(UInt(bitPattern: service), radix: 16)
+        return "IOAVService, chip=0x\(String(chipAddress, radix: 16))\(switched), read=\(strategyName), svc=0x\(pointer)"
     }
 
     init(service: UnsafeMutableRawPointer, chipAddress: UInt32) {
