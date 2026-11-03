@@ -24,6 +24,7 @@ public final class DisplayController: ObservableObject, Identifiable {
     @Published public private(set) var statusMessage = ""
     @Published public private(set) var isReady = false
     @Published public private(set) var diagnostics: [String] = []
+    @Published public private(set) var forceSoftwareDimming = false
 
     private let display: PhysicalDisplay
     private let queue: DispatchQueue
@@ -36,6 +37,8 @@ public final class DisplayController: ObservableObject, Identifiable {
     /// Samsung panels behave like this; brightness still works, we just cannot query it.
     private var writeOnlyBrightness = false
     private var brightnessReadable = false
+    private var brightnessWriteVerified = false
+    private var ddcBrightnessIneffective = false
 
     public init(display: PhysicalDisplay) {
         self.display = display
@@ -85,8 +88,10 @@ public final class DisplayController: ObservableObject, Identifiable {
                 if let muteValue { self.isMuted = muteValue }
 
                 if self.display.hasDDC {
-                    self.usesSoftwareDimming = brightnessValue == nil && !self.writeOnlyBrightness
-                    if brightnessValue != nil {
+                    self.usesSoftwareDimming = (brightnessValue == nil || self.ddcBrightnessIneffective) && !self.writeOnlyBrightness
+                    if self.ddcBrightnessIneffective {
+                        self.statusMessage = "DDC wirkungslos – Software-Dimmung"
+                    } else if brightnessValue != nil {
                         self.statusMessage = ""
                     } else if self.writeOnlyBrightness {
                         self.statusMessage = "DDC (nur schreiben)"
@@ -141,6 +146,24 @@ public final class DisplayController: ObservableObject, Identifiable {
     public func resetSoftwareDimming() {
         SoftwareBrightness.reset(displayID: displayID)
         usesSoftwareDimming = false
+    }
+
+    /// Lets the user force gamma dimming, e.g. when the panel accepts DDC packets but does
+    /// not act on them (typical for HDMI on Apple Silicon).
+    public func setForceSoftwareDimming(_ enabled: Bool) {
+        ddcBrightnessIneffective = enabled
+        forceSoftwareDimming = enabled
+        if enabled {
+            usesSoftwareDimming = true
+            statusMessage = "Software-Dimmung (erzwungen)"
+            SoftwareBrightness.apply(displayID: displayID, percent: brightness)
+        } else {
+            SoftwareBrightness.reset(displayID: displayID)
+            usesSoftwareDimming = false
+            statusMessage = ""
+            brightnessWriteVerified = false
+            refresh()
+        }
     }
 
     /// Collects everything that helps to debug a non-responding panel: transport, per-VCP
@@ -211,10 +234,29 @@ public final class DisplayController: ObservableObject, Identifiable {
     }
 
     private func writeBrightness(_ percent: Double) {
-        if display.hasDDC {
+        if display.hasDDC && !ddcBrightnessIneffective {
             let maximum = brightnessReadable ? brightnessMax : 100
             let value = UInt16((percent / 100.0 * Double(maximum)).rounded())
             if display.write(.brightness, value: value) {
+                // The I²C layer accepting a write does not mean the panel applied it. On the
+                // HDMI port of an Apple Silicon Mac the MCDP29xx controller happily swallows
+                // DDC packets that never reach the monitor. Check once and fall back to gamma
+                // dimming if the value does not come back.
+                if brightnessReadable && !brightnessWriteVerified {
+                    brightnessWriteVerified = true
+                    usleep(150_000)
+                    if let check = display.read(.brightness) {
+                        let delta = abs(Int(check.current) - Int(value))
+                        if delta > 2 {
+                            ddcBrightnessIneffective = true
+                            DispatchQueue.main.async {
+                                self.usesSoftwareDimming = true
+                                self.statusMessage = "DDC wirkungslos – Software-Dimmung"
+                            }
+                            SoftwareBrightness.apply(displayID: displayID, percent: percent)
+                        }
+                    }
+                }
                 if !brightnessReadable && !writeOnlyBrightness {
                     DispatchQueue.main.async {
                         self.writeOnlyBrightness = true
@@ -225,6 +267,7 @@ public final class DisplayController: ObservableObject, Identifiable {
                 }
                 return
             }
+            ddcBrightnessIneffective = true
         }
         // No DDC at all, or the panel refused the write: dim through the gamma table so the
         // slider still does something useful.

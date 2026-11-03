@@ -210,6 +210,22 @@ private struct DisplaySection: View {
                 Text(display.name)
                     .font(.system(size: 12, weight: .semibold))
                 Spacer()
+                if display.hasDDC {
+                    Button {
+                        display.setForceSoftwareDimming(!display.forceSoftwareDimming)
+                    } label: {
+                        Text("Gamma")
+                            .font(.system(size: 9, weight: .medium))
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 2)
+                            .background(
+                                RoundedRectangle(cornerRadius: 4)
+                                    .fill(display.forceSoftwareDimming ? accent.opacity(0.25) : Color.primary.opacity(0.08))
+                            )
+                    }
+                    .buttonStyle(.borderless)
+                    .help("Helligkeit über die Gamma-Tabelle dimmen, wenn der Monitor DDC-Befehle ignoriert")
+                }
                 if !display.statusMessage.isEmpty {
                     Text(display.statusMessage)
                         .font(.system(size: 10))

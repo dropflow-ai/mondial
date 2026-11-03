@@ -208,6 +208,13 @@ Gamma-Dimmung auszuweichen.
 
 **Es passiert nichts / „DDC ohne Rückmeldung“**
 
+**Helligkeit reagiert nicht, obwohl der Monitor antwortet.** Auf Apple Silicon nimmt der
+HDMI-Controller DDC-Pakete an, ohne sie an den Monitor weiterzugeben. ScreenMix prüft den
+ersten Schreibvorgang deshalb durch Rücklesen und schaltet bei ausbleibender Wirkung
+automatisch auf Gamma-Dimmung um (Status „DDC wirkungslos – Software-Dimmung“). Erzwingen
+lässt sich das mit dem Knopf **Gamma** neben dem Monitornamen. Echte
+Backlight-Helligkeit und Lautstärke gibt es über USB-C/DisplayPort.
+
 1. `screenmixctl doctor` ausführen. Wichtig sind die Zeilen `Transport` und die Antwortzeiten.
 2. Im Monitor-OSD `DDC/CI` einschalten (bei Dell, LG, BenQ, Eizo unterschiedlich benannt).
 3. Direkt anschliessen: kein Hub, kein KVM, kein Adapter zwischen Mac und Monitor.
