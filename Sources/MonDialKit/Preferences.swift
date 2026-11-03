@@ -37,7 +37,7 @@ public enum Preferences {
     }
 }
 
-/// Small helper used by `screenmixctl doctor` and the CLI's error messages.
+/// Small helper used by `mondialctl doctor` and the CLI's error messages.
 public enum Diagnostics {
     public static var architecture: String {
         #if arch(arm64)

@@ -5,7 +5,7 @@ import Foundation
 /// `SMAppService` would be the modern API, but it insists on a properly signed app bundle in
 /// `/Applications`. A LaunchAgent works for locally built, ad-hoc signed bundles too.
 enum LoginItem {
-    static let label = "ch.dropflow.screenmix.agent"
+    static let label = "ch.dropflow.mondial.agent"
 
     static var plistURL: URL {
         FileManager.default.homeDirectoryForCurrentUser

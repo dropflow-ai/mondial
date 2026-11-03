@@ -1,5 +1,5 @@
 import Foundation
-import ScreenMixKit
+import MonDialKit
 
 // MARK: - Helpers
 
@@ -17,15 +17,15 @@ func fail(_ message: String, code: Int32 = 1) -> Never {
 }
 
 let usage = """
-screenmixctl \(ScreenMixVersion.string) - Helligkeit und Lautstärke externer Bildschirme steuern (DDC/CI)
+mondialctl \(MonDialVersion.string) - Helligkeit und Lautstärke externer Bildschirme steuern (DDC/CI)
 
 AUFRUF
-  screenmixctl list [--json]
-  screenmixctl get <attribut> [-d <bildschirm>]
-  screenmixctl set <attribut> <wert> [-d <bildschirm>]
-  screenmixctl step <attribut> <delta> [-d <bildschirm>]
-  screenmixctl mute on|off|toggle [-d <bildschirm>]
-  screenmixctl doctor [--json]
+  mondialctl list [--json]
+  mondialctl get <attribut> [-d <bildschirm>]
+  mondialctl set <attribut> <wert> [-d <bildschirm>]
+  mondialctl step <attribut> <delta> [-d <bildschirm>]
+  mondialctl mute on|off|toggle [-d <bildschirm>]
+  mondialctl doctor [--json]
 
 ATTRIBUTE
   brightness | helligkeit     Helligkeit in Prozent
@@ -34,17 +34,17 @@ ATTRIBUTE
   mute                        Stummschaltung (on/off/toggle)
 
 BILDSCHIRM (-d)
-  1, 2, 3 ...                 Index aus "screenmixctl list"
+  1, 2, 3 ...                 Index aus "mondialctl list"
   <uuid>                      UUID (auch Teilstring)
   <name>                      Teilstring des Namens, z.B. "LG"
 
 BEISPIELE
-  screenmixctl list
-  screenmixctl get brightness
-  screenmixctl set volume 35
-  screenmixctl step brightness -6
-  screenmixctl mute toggle
-  screenmixctl set brightness 40 -d "LG"
+  mondialctl list
+  mondialctl get brightness
+  mondialctl set volume 35
+  mondialctl step brightness -6
+  mondialctl mute toggle
+  mondialctl set brightness 40 -d "LG"
 
 OPTIONEN
   --json                      Maschinenlesbare Ausgabe
@@ -72,7 +72,7 @@ while index < arguments.count {
         writeOut(usage)
         exit(0)
     case "-v", "--version":
-        writeOut("screenmixctl \(ScreenMixVersion.string)\n")
+        writeOut("mondialctl \(MonDialVersion.string)\n")
         exit(0)
     default:
         positional.append(argument)
@@ -110,7 +110,7 @@ func selectDisplay(from displays: [PhysicalDisplay], selector: String?) -> Physi
     if let match = displays.first(where: { $0.name.lowercased().contains(lowered) }) {
         return match
     }
-    fail("Bildschirm \"\(selector)\" nicht gefunden. Nutze \"screenmixctl list\".")
+    fail("Bildschirm \"\(selector)\" nicht gefunden. Nutze \"mondialctl list\".")
 }
 
 func parseAttribute(_ raw: String) -> VCP {
@@ -188,7 +188,7 @@ func runList() {
 }
 
 func runGet() {
-    guard positional.count >= 2 else { fail("Aufruf: screenmixctl get <attribut>") }
+    guard positional.count >= 2 else { fail("Aufruf: mondialctl get <attribut>") }
     let attribute = parseAttribute(positional[1])
     let display = selectDisplay(from: allDisplays(), selector: displaySelector)
 
@@ -207,7 +207,7 @@ func runGet() {
 }
 
 func runSet() {
-    guard positional.count >= 3 else { fail("Aufruf: screenmixctl set <attribut> <wert>") }
+    guard positional.count >= 3 else { fail("Aufruf: mondialctl set <attribut> <wert>") }
     let attribute = parseAttribute(positional[1])
     let value = positional[2]
     let display = selectDisplay(from: allDisplays(), selector: displaySelector)
@@ -240,7 +240,7 @@ func runSet() {
 }
 
 func runStep() {
-    guard positional.count >= 3 else { fail("Aufruf: screenmixctl step <attribut> <delta>") }
+    guard positional.count >= 3 else { fail("Aufruf: mondialctl step <attribut> <delta>") }
     let attribute = parseAttribute(positional[1])
     if attribute == .mute {
         let display = selectDisplay(from: allDisplays(), selector: displaySelector)
@@ -315,7 +315,7 @@ func runDoctor() {
         exit(0)
     }
 
-    writeOut("ScreenMix \(ScreenMixVersion.string)\n")
+    writeOut("MonDial \(MonDialVersion.string)\n")
     writeOut("System          \(Diagnostics.operatingSystem)\n")
     writeOut("Architektur     \(Diagnostics.architecture)\n")
     writeOut("DDC-Backend     \(backend)\n")

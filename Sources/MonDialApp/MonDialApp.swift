@@ -1,9 +1,9 @@
 import SwiftUI
 import AppKit
-import ScreenMixKit
+import MonDialKit
 
 @main
-struct ScreenMixApp: App {
+struct MonDialApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var store = DisplayStore.shared
 

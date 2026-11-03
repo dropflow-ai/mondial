@@ -2,18 +2,18 @@
 import PackageDescription
 
 let package = Package(
-    name: "ScreenMix",
+    name: "MonDial",
     platforms: [
         .macOS(.v13)
     ],
     products: [
-        .executable(name: "screenmixctl", targets: ["screenmixctl"]),
-        .executable(name: "ScreenMix", targets: ["ScreenMixApp"]),
-        .library(name: "ScreenMixKit", targets: ["ScreenMixKit"])
+        .executable(name: "mondialctl", targets: ["mondialctl"]),
+        .executable(name: "MonDial", targets: ["MonDialApp"]),
+        .library(name: "MonDialKit", targets: ["MonDialKit"])
     ],
     targets: [
         .target(
-            name: "ScreenMixKit",
+            name: "MonDialKit",
             linkerSettings: [
                 .linkedFramework("IOKit"),
                 .linkedFramework("CoreGraphics"),
@@ -21,16 +21,16 @@ let package = Package(
             ]
         ),
         .executableTarget(
-            name: "screenmixctl",
-            dependencies: ["ScreenMixKit"],
+            name: "mondialctl",
+            dependencies: ["MonDialKit"],
             linkerSettings: [
                 .linkedFramework("IOKit"),
                 .linkedFramework("CoreGraphics")
             ]
         ),
         .executableTarget(
-            name: "ScreenMixApp",
-            dependencies: ["ScreenMixKit"],
+            name: "MonDialApp",
+            dependencies: ["MonDialKit"],
             linkerSettings: [
                 .linkedFramework("IOKit"),
                 .linkedFramework("CoreGraphics"),

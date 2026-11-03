@@ -1,6 +1,6 @@
 import Foundation
 import Combine
-import ScreenMixKit
+import MonDialKit
 
 /// Holds the list of displays shown in the menu bar popover and dispatches key commands to
 /// the "primary" display (the first external one, which is what people usually want to dim).
@@ -12,7 +12,7 @@ final class DisplayStore: ObservableObject {
     @Published var message: String?
 
     private var controllers: [String: DisplayController] = [:]
-    private let scanQueue = DispatchQueue(label: "ch.dropflow.screenmix.scan")
+    private let scanQueue = DispatchQueue(label: "ch.dropflow.mondial.scan")
 
     private init() {}
 

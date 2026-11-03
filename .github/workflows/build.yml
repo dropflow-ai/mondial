@@ -24,24 +24,24 @@ jobs:
       - name: Show bundle
         run: |
           ls -la dist
-          codesign -dv dist/ScreenMix.app 2>&1 | head -5 || true
+          codesign -dv dist/MonDial.app 2>&1 | head -5 || true
 
       - name: Smoke test CLI
         run: |
-          ./dist/screenmixctl --version
-          ./dist/screenmixctl list || true
-          ./dist/screenmixctl doctor || true
+          ./dist/mondialctl --version
+          ./dist/mondialctl list || true
+          ./dist/mondialctl doctor || true
 
       - name: Package
         run: |
           cd dist
-          ditto -c -k --sequesterRsrc --keepParent ScreenMix.app ScreenMix-app.zip
-          zip -r ScreenMix-cli.zip screenmixctl
+          ditto -c -k --sequesterRsrc --keepParent MonDial.app MonDial-app.zip
+          zip -r MonDial-cli.zip mondialctl
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ScreenMix
+          name: MonDial
           path: |
-            dist/ScreenMix-app.zip
-            dist/ScreenMix-cli.zip
+            dist/MonDial-app.zip
+            dist/MonDial-cli.zip
           if-no-files-found: error

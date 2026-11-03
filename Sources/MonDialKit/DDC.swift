@@ -24,7 +24,7 @@ public enum VCP: UInt8 {
 
 /// A single DDC/CI capable display connection.
 public protocol DDCTransport: AnyObject {
-    /// Human readable description of the transport, used by `screenmixctl doctor`.
+    /// Human readable description of the transport, used by `mondialctl doctor`.
     var debugDescription: String { get }
     /// Reads a VCP value. Returns `nil` when the display does not answer or does not support
     /// the given code.

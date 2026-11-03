@@ -5,17 +5,17 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>de</string>
     <key>CFBundleExecutable</key>
-    <string>ScreenMix</string>
+    <string>MonDial</string>
     <key>CFBundleIconFile</key>
     <string>AppIcon</string>
     <key>CFBundleIdentifier</key>
-    <string>ch.dropflow.screenmix</string>
+    <string>ch.dropflow.mondial</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-    <string>ScreenMix</string>
+    <string>MonDial</string>
     <key>CFBundleDisplayName</key>
-    <string>ScreenMix</string>
+    <string>MonDial</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
@@ -29,6 +29,6 @@
     <key>NSHighResolutionCapable</key>
     <true/>
     <key>NSHumanReadableCopyright</key>
-    <string>ScreenMix – DDC/CI Steuerung für externe Bildschirme</string>
+    <string>MonDial – DDC/CI Steuerung für externe Bildschirme</string>
 </dict>
 </plist>

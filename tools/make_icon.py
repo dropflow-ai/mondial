@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Erzeugt das App-Icon (1024x1024 PNG) für ScreenMix.
+"""Erzeugt das App-Icon (1024x1024 PNG) für MonDial.
 
 Aufruf: python3 tools/make_icon.py Resources/AppIcon.png
 """

@@ -1,5 +1,5 @@
 import Foundation
 
-public enum ScreenMixVersion {
+public enum MonDialVersion {
     public static let string = "1.0.4"
 }

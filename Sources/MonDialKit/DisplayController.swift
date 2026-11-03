@@ -47,7 +47,7 @@ public final class DisplayController: ObservableObject, Identifiable {
         self.name = display.name
         self.isBuiltin = display.isBuiltin
         self.hasDDC = display.hasDDC
-        self.queue = DispatchQueue(label: "ch.dropflow.screenmix.ddc.\(display.displayID)")
+        self.queue = DispatchQueue(label: "ch.dropflow.mondial.ddc.\(display.displayID)")
     }
 
     // MARK: - Reading

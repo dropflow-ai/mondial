@@ -1,6 +1,6 @@
 import SwiftUI
 import AppKit
-import ScreenMixKit
+import MonDialKit
 
 struct PopoverView: View {
     @ObservedObject var store: DisplayStore
@@ -94,7 +94,7 @@ struct PopoverView: View {
         HStack(spacing: 8) {
             Image(systemName: "sun.max.fill")
                 .foregroundStyle(accent)
-            Text("ScreenMix")
+            Text("MonDial")
                 .font(.system(size: 14, weight: .semibold))
             Spacer()
             Button {
@@ -138,7 +138,7 @@ struct PopoverView: View {
 
             if permissionWarning {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Dafür braucht ScreenMix die Berechtigung „Bedienungshilfen“.")
+                    Text("Dafür braucht MonDial die Berechtigung „Bedienungshilfen“.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Button("Systemeinstellungen öffnen") {
@@ -226,7 +226,7 @@ struct PopoverView: View {
 
     private func copyDiagnostics() {
         var lines: [String] = []
-        lines.append("ScreenMix \(ScreenMixVersion.string)")
+        lines.append("MonDial \(MonDialVersion.string)")
         lines.append("System: \(ProcessInfo.processInfo.operatingSystemVersionString)")
         lines.append("Architektur: \(Diagnostics.architecture)")
         lines.append("Backend: \(Diagnostics.ddcBackendDescription)")
