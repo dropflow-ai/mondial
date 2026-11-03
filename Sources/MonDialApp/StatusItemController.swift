@@ -32,6 +32,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
             self?.resize()
         }
         let controller = NSHostingController(rootView: AnyView(root))
+        controller.sizingOptions = [.preferredContentSize]
         hosting = controller
         popover.contentViewController = controller
         popover.behavior = .transient
@@ -58,11 +59,17 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
 
     /// Fits the popover to the height the SwiftUI content actually needs.
     func resize() {
-        guard let view = hosting?.view else { return }
-        view.layoutSubtreeIfNeeded()
-        let fitting = view.fittingSize
-        let height = min(max(ceil(fitting.height), 120), 900)
-        let target = NSSize(width: width, height: height)
+        guard let controller = hosting else { return }
+        controller.view.layoutSubtreeIfNeeded()
+
+        // `preferredContentSize` is maintained by the hosting controller itself; `fittingSize`
+        // is the fallback for the moment before the first layout pass has happened.
+        var height = controller.preferredContentSize.height
+        if height < 100 { height = controller.view.fittingSize.height }
+        if height < 100 { height = 360 }
+
+        let screenLimit = (NSScreen.main?.visibleFrame.height ?? 900) - 40
+        let target = NSSize(width: width, height: min(max(ceil(height), 120), screenLimit))
         guard popover.contentSize != target else { return }
         popover.contentSize = target
     }
