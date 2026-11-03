@@ -3,6 +3,15 @@
 Versions follow `MAJOR.MINOR.PATCH`. The app is a menu bar utility, so minor versions are
 feature work and patch versions are fixes.
 
+## 1.2.0 — 2026-11-03
+
+- **Bilingual interface.** German strings stay the original, English is the translation;
+  the language follows the system setting. `MONDIAL_LANG=de|en` forces one, which is handy
+  for testing a translation without changing the Mac's language.
+- Every user-facing string is now a `L(german, english)` pair: panel, status messages,
+  diagnostics, VCP names, audio output labels, and the CLI with its usage text, `list` and
+  `doctor` output.
+
 ## 1.1.2 — 2026-11-03
 
 - **Matching by probing.** Displays are now bound to a DCP proxy by sending a single

@@ -32,7 +32,7 @@ MonDial exists because the DDC plumbing on Apple Silicon is surprisingly hard to
 - **Global hotkeys.** `⌃⌥↑`/`⌃⌥↓` for brightness, `⌃⌥⇧↑`/`⌃⌥⇧↓` for volume, `⌃⌥M` to mute. Optional takeover of the real media keys (`F1`, `F2`, `F10`–`F12`), which needs the Accessibility permission.
 - **Diagnostics.** `mondialctl doctor` and a diagnostic panel that reports transport, chip address, reply format, response times and a write/read-back test.
 
-The UI is currently German. Localisation is on the list below.
+The interface is bilingual and follows the system language, German or English. Set `MONDIAL_LANG=en` (or `de`) to force one, for example while testing a translation; the CLI and the diagnostics copy honour the same variable.
 
 ## Install
 
@@ -176,7 +176,7 @@ build.sh                builds the .app bundle without Xcode
 
 Issues and pull requests are welcome, but this is a side project: there is no support contract and no release schedule. Realistic promises only — bug reports with a `mondialctl doctor` output get looked at first, and macOS betas are checked when I happen to run one. If you need guaranteed support for a fleet of Macs, BetterDisplay is the safer choice.
 
-Open items: English UI strings, Homebrew cask, a hero screenshot taken on a single-display setup, notarised release build. Version history is in [CHANGELOG.md](CHANGELOG.md).
+Open items: Homebrew cask, a hero screenshot taken on a single-display setup, notarised release build. Version history is in [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 
@@ -192,4 +192,4 @@ MonDial ist eine Menüleisten-App, die Helligkeit und Lautstärke externer Bilds
 
 Installation: Release-ZIP nach `/Programme` ziehen, einmal `xattr -dr com.apple.quarantine /Applications/MonDial.app`, fertig. Oder selbst bauen: `./build.sh --install`.
 
-Die Oberfläche ist derzeit deutsch. Für Helligkeit, Kontrast, OSD und Display-Synchronisierung ist [MonitorControl](https://github.com/MonitorControl/MonitorControl) die reifere Wahl; MonDial ist bewusst klein und als lesbare Referenz gedacht.
+Die Oberfläche ist zweisprachig und folgt der Systemsprache (Deutsch oder Englisch). Für Helligkeit, Kontrast, OSD und Display-Synchronisierung ist [MonitorControl](https://github.com/MonitorControl/MonitorControl) die reifere Wahl; MonDial ist bewusst klein und als lesbare Referenz gedacht.
