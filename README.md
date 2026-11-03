@@ -52,6 +52,12 @@ cd mondial
 
 `./build.sh` alone writes `dist/MonDial.app` and `dist/mondialctl`; `./build.sh --run` starts the app afterwards.
 
+Replacing an installed build — quit, remove, unpack, clear the quarantine flag, print the version, relaunch — is what `tools/reinstall.sh` does:
+
+```bash
+./tools/reinstall.sh ~/Downloads/MonDial-app.zip
+```
+
 ## Why the app is not notarised
 
 MonDial ships ad-hoc signed (`codesign --sign -`). That is enough for the app to run, but macOS marks every downloaded file as quarantined, and Gatekeeper only waives that for binaries signed with an Apple **Developer ID** certificate *and* notarised by Apple. Notarisation means: a paid Apple Developer Program membership (99 USD per year), a Developer ID certificate, hardened runtime flags when signing, an upload to Apple's notary service and a stapled ticket attached to the bundle.
@@ -139,7 +145,7 @@ mondialctl doctor
 ```
 
 ```
-MonDial 1.1.0
+MonDial 1.1.2
 System          macOS 15.1
 Architecture    arm64 (Apple Silicon)
 DDC backend     IOAVService (private, Apple Silicon)
@@ -170,7 +176,7 @@ build.sh                builds the .app bundle without Xcode
 
 Issues and pull requests are welcome, but this is a side project: there is no support contract and no release schedule. Realistic promises only — bug reports with a `mondialctl doctor` output get looked at first, and macOS betas are checked when I happen to run one. If you need guaranteed support for a fleet of Macs, BetterDisplay is the safer choice.
 
-Open items: English UI strings, Homebrew cask, screenshot from a real machine, notarised release build.
+Open items: English UI strings, Homebrew cask, a hero screenshot taken on a single-display setup, notarised release build. Version history is in [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 
