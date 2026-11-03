@@ -52,6 +52,20 @@ cd mondial
 
 `./build.sh` alone writes `dist/MonDial.app` and `dist/mondialctl`; `./build.sh --run` starts the app afterwards.
 
+## Why the app is not notarised
+
+MonDial ships ad-hoc signed (`codesign --sign -`). That is enough for the app to run, but macOS marks every downloaded file as quarantined, and Gatekeeper only waives that for binaries signed with an Apple **Developer ID** certificate *and* notarised by Apple. Notarisation means: a paid Apple Developer Program membership (99 USD per year), a Developer ID certificate, hardened runtime flags when signing, an upload to Apple's notary service and a stapled ticket attached to the bundle.
+
+I skipped it deliberately. The project earns nothing, so the fee would buy nothing for the handful of people who build it themselves. More importantly: notarisation creates the impression of an Apple-vetted download, while the core of this app is an undocumented private API (`IOAVService*`) that Apple can change with any macOS release. Advertising a frictionless, officially blessed install on top of a private function would be misleading. The honest version is the one below — one command, once.
+
+```bash
+xattr -dr com.apple.quarantine /Applications/MonDial.app
+```
+
+Since macOS 15 the old Control-click → *Open* trick no longer bypasses Gatekeeper; the GUI route is System Settings → Privacy & Security → *Open Anyway*. If you build from source with `./build.sh --install`, no quarantine is involved at all: the binary is compiled locally and never carries the attribute.
+
+If a notarised build ever becomes worthwhile — more users, or a Homebrew cask without `--no-quarantine` — the work is small: the CI already produces the bundle, so it needs a certificate secret, `--options runtime` in `build.sh` and a `notarytool` step in the workflow.
+
 ## Command line
 
 ```bash
@@ -98,6 +112,10 @@ Displays are enumerated with `CGGetOnlineDisplayList`, matched to their `DCPAVSe
 **Some panels simply say no.** Monitors with a locked brightness control (active HDR, "Eye Saver", "Eco Saving", adaptive picture), KVM switches, hubs and capture devices can swallow DDC entirely. `mondialctl doctor` tells you which of the four test values still answer.
 
 **Gamma dimming is not brightness.** When DDC fails, the panel's backlight stays where it is and the image is scaled down instead. MonDial reports this as „DDC wirkungslos – Software-Dimmung".
+
+![Panel with one display that never answers](docs/ddc-no-reply.png)
+
+*A real panel after a silent DDC failure: the upper entry answers nothing at all — no brightness, no volume — and has been switched to gamma dimming with the **Gamma** chip. The lower entry talks to the monitor normally. The audio row shows the Mac's current output device.*
 
 ## How it compares
 
