@@ -12,12 +12,12 @@ public enum VCP: UInt8 {
 
     public var localizedName: String {
         switch self {
-        case .brightness: return "Helligkeit"
-        case .contrast: return "Kontrast"
-        case .volume: return "Lautstärke"
-        case .mute: return "Stumm"
-        case .inputSource: return "Eingang"
-        case .powerMode: return "Energie sparen"
+        case .brightness: return L("Helligkeit", "Brightness")
+        case .contrast: return L("Kontrast", "Contrast")
+        case .volume: return L("Lautstärke", "Volume")
+        case .mute: return L("Stumm", "Mute")
+        case .inputSource: return L("Eingang", "Input")
+        case .powerMode: return L("Energie sparen", "Power mode")
         }
     }
 }

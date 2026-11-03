@@ -45,19 +45,19 @@ public enum Diagnostics {
         #elseif arch(x86_64)
         return "x86_64 (Intel)"
         #else
-        return "unbekannt"
+        return L("unbekannt", "unknown")
         #endif
     }
 
     public static var ddcBackendDescription: String {
         #if arch(arm64)
         return PrivateAPI.shared.supportsIOAVService
-            ? "IOAVService (privat, Apple Silicon)"
-            : "IOAVService nicht verfügbar"
+            ? L("IOAVService (privat, Apple Silicon)", "IOAVService (private, Apple Silicon)")
+            : L("IOAVService nicht verfügbar", "IOAVService unavailable")
         #elseif arch(x86_64)
         return "IOI2CInterface (Intel)"
         #else
-        return "nicht unterstützt"
+        return L("nicht unterstützt", "unsupported")
         #endif
     }
 

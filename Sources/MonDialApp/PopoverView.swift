@@ -20,7 +20,7 @@ struct PopoverView: View {
             header
 
             if store.displays.isEmpty {
-                Text("Kein Bildschirm gefunden.")
+                Text(L("Kein Bildschirm gefunden.", "No display found."))
                     .font(.callout)
                     .foregroundStyle(.secondary)
             } else {
@@ -54,7 +54,7 @@ struct PopoverView: View {
             Image(systemName: "hifispeaker.fill")
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
-            Text("Ausgabe")
+            Text(L("Ausgabe", "Output"))
                 .font(.callout)
                 .foregroundStyle(.secondary)
             Spacer(minLength: 8)
@@ -71,7 +71,7 @@ struct PopoverView: View {
                     }
                 }
                 Divider()
-                Button("Liste aktualisieren") { audio.refresh() }
+                Button(L("Liste aktualisieren", "Refresh list")) { audio.refresh() }
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: audio.devices.first { $0.id == audio.currentID }?.symbol ?? "speaker.wave.2")
@@ -86,7 +86,7 @@ struct PopoverView: View {
             }
             .menuStyle(.borderlessButton)
             .fixedSize()
-            .help("Audioausgabe des Macs umschalten")
+            .help(L("Audioausgabe des Macs umschalten", "Switch the audio output of this Mac"))
         }
     }
 
@@ -103,13 +103,13 @@ struct PopoverView: View {
                 Image(systemName: showSettings ? "gearshape.fill" : "gearshape")
             }
             .buttonStyle(.borderless)
-            .help("Einstellungen")
+            .help(L("Einstellungen", "Settings"))
         }
     }
 
     private var settings: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Toggle("Tastenkürzel ⌃⌥↑ / ⌃⌥↓", isOn: $hotKeysEnabled)
+            Toggle(L("Tastenkürzel ⌃⌥↑ / ⌃⌥↓", "Shortcuts ⌃⌥↑ / ⌃⌥↓"), isOn: $hotKeysEnabled)
                 .onChange(of: hotKeysEnabled) { value in
                     Preferences.hotKeysEnabled = value
                     if value {
@@ -119,7 +119,9 @@ struct PopoverView: View {
                     }
                 }
 
-            Toggle("Medientasten abfangen (F1 / F2 / F10–F12)", isOn: $mediaKeysEnabled)
+            Toggle(L("Medientasten abfangen (F1 / F2 / F10–F12)",
+                     "Capture media keys (F1 / F2 / F10–F12)"),
+                   isOn: $mediaKeysEnabled)
                 .onChange(of: mediaKeysEnabled) { value in
                     if value {
                         let started = MediaKeyMonitor.shared.start()
@@ -138,17 +140,18 @@ struct PopoverView: View {
 
             if permissionWarning {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Dafür braucht MonDial die Berechtigung „Bedienungshilfen“.")
+                    Text(L("Dafür braucht MonDial die Berechtigung „Bedienungshilfen“.",
+                           "MonDial needs the Accessibility permission for this."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    Button("Systemeinstellungen öffnen") {
+                    Button(L("Systemeinstellungen öffnen", "Open System Settings")) {
                         openAccessibilitySettings()
                     }
                     .font(.caption)
                 }
             }
 
-            Toggle("Beim Anmelden öffnen", isOn: $launchAtLogin)
+            Toggle(L("Beim Anmelden öffnen", "Open at login"), isOn: $launchAtLogin)
                 .onChange(of: launchAtLogin) { value in
                     LoginItem.setEnabled(value)
                 }
@@ -161,7 +164,7 @@ struct PopoverView: View {
             Button {
                 store.refresh(force: true)
             } label: {
-                Label("Neu scannen", systemImage: "arrow.clockwise")
+                Label(L("Neu scannen", "Rescan"), systemImage: "arrow.clockwise")
                     .font(.callout)
             }
             .buttonStyle(.borderless)
@@ -172,14 +175,14 @@ struct PopoverView: View {
                     store.displays.forEach { $0.runDiagnostics() }
                 }
             } label: {
-                Label("Diagnose", systemImage: "stethoscope")
+                Label(L("Diagnose", "Diagnostics"), systemImage: "stethoscope")
                     .font(.callout)
             }
             .buttonStyle(.borderless)
 
             Spacer()
 
-            Button("Beenden") {
+            Button(L("Beenden", "Quit")) {
                 NSApplication.shared.terminate(nil)
             }
             .buttonStyle(.borderless)
@@ -190,13 +193,13 @@ struct PopoverView: View {
     private var diagnosticsSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text("Diagnose")
+                Text(L("Diagnose", "Diagnostics"))
                     .font(.system(size: 11, weight: .semibold))
                 Spacer()
-                Button("Kopieren") { copyDiagnostics() }
+                Button(L("Kopieren", "Copy")) { copyDiagnostics() }
                     .font(.caption)
                     .buttonStyle(.borderless)
-                Button("Aktualisieren") { store.displays.forEach { $0.runDiagnostics() } }
+                Button(L("Aktualisieren", "Refresh")) { store.displays.forEach { $0.runDiagnostics() } }
                     .font(.caption)
                     .buttonStyle(.borderless)
             }
@@ -204,7 +207,7 @@ struct PopoverView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 2) {
                     if store.displays.allSatisfy({ $0.diagnostics.isEmpty }) {
-                        Text("Wird ermittelt …")
+                        Text(L("Wird ermittelt …", "Collecting …"))
                             .font(.system(size: 9, design: .monospaced))
                             .foregroundStyle(.secondary)
                     }
@@ -227,9 +230,9 @@ struct PopoverView: View {
     private func copyDiagnostics() {
         var lines: [String] = []
         lines.append("MonDial \(MonDialVersion.string)")
-        lines.append("System: \(ProcessInfo.processInfo.operatingSystemVersionString)")
-        lines.append("Architektur: \(Diagnostics.architecture)")
-        lines.append("Backend: \(Diagnostics.ddcBackendDescription)")
+        lines.append("\(L("System", "System")): \(ProcessInfo.processInfo.operatingSystemVersionString)")
+        lines.append("\(L("Architektur", "Architecture")): \(Diagnostics.architecture)")
+        lines.append("\(L("Backend", "Backend")): \(Diagnostics.ddcBackendDescription)")
         lines.append("")
         for display in store.displays {
             lines.append(contentsOf: display.diagnostics)
@@ -269,7 +272,8 @@ private struct DisplaySection: View {
                             )
                     }
                     .buttonStyle(.borderless)
-                    .help("Helligkeit über die Gamma-Tabelle dimmen, wenn der Monitor DDC-Befehle ignoriert")
+                    .help(L("Helligkeit über die Gamma-Tabelle dimmen, wenn der Monitor DDC-Befehle ignoriert",
+                            "Dim through the gamma table when the monitor ignores DDC commands"))
                 }
                 if !display.statusMessage.isEmpty {
                     Text(display.statusMessage)
@@ -289,7 +293,8 @@ private struct DisplaySection: View {
                         isEnabled: true
                     )
                 } else {
-                    UnavailableRow(title: "Helligkeit ohne DDC nicht steuerbar")
+                    UnavailableRow(title: L("Helligkeit ohne DDC nicht steuerbar",
+                                            "Brightness cannot be controlled without DDC"))
                 }
 
                 if display.supportsVolume {
@@ -308,11 +313,12 @@ private struct DisplaySection: View {
                                     .font(.system(size: 11))
                             }
                             .buttonStyle(.borderless)
-                            .help(display.isMuted ? "Ton einschalten" : "Stummschalten")
+                            .help(display.isMuted ? L("Ton einschalten", "Unmute") : L("Stummschalten", "Mute"))
                         }
                     }
                 } else if display.hasDDC {
-                    UnavailableRow(title: "Lautstärke wird von diesem Bildschirm nicht gemeldet")
+                    UnavailableRow(title: L("Lautstärke wird von diesem Bildschirm nicht gemeldet",
+                                            "This display does not report a volume"))
                 }
             }
         }

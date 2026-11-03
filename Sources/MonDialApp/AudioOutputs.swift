@@ -112,14 +112,14 @@ enum AudioOutputs {
 
     private static func label(for transport: UInt32) -> String {
         switch transport {
-        case kAudioDeviceTransportTypeBuiltIn: return "intern"
+        case kAudioDeviceTransportTypeBuiltIn: return L("intern", "internal")
         case kAudioDeviceTransportTypeBluetooth, kAudioDeviceTransportTypeBluetoothLE: return "Bluetooth"
         case kAudioDeviceTransportTypeUSB: return "USB"
         case kAudioDeviceTransportTypeHDMI: return "HDMI"
         case kAudioDeviceTransportTypeDisplayPort: return "DisplayPort"
         case kAudioDeviceTransportTypeAirPlay: return "AirPlay"
-        case kAudioDeviceTransportTypeVirtual: return "virtuell"
-        default: return "Gerät"
+        case kAudioDeviceTransportTypeVirtual: return L("virtuell", "virtual")
+        default: return L("Gerät", "device")
         }
     }
 }

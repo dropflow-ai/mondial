@@ -12,11 +12,11 @@ func writeErr(_ text: String) {
 }
 
 func fail(_ message: String, code: Int32 = 1) -> Never {
-    writeErr("Fehler: \(message)\n")
+    writeErr("\(L("Fehler", "Error")): \(message)\n")
     exit(code)
 }
 
-let usage = """
+let usageGerman = """
 mondialctl \(MonDialVersion.string) - Helligkeit und Lautstärke externer Bildschirme steuern (DDC/CI)
 
 AUFRUF
@@ -51,6 +51,47 @@ OPTIONEN
   -h, --help                  Diese Hilfe
 """
 
+let usageEnglish = """
+mondialctl \(MonDialVersion.string) - control brightness and volume of external displays (DDC/CI)
+
+USAGE
+  mondialctl list [--json]
+  mondialctl get <attribute> [-d <display>]
+  mondialctl set <attribute> <value> [-d <display>]
+  mondialctl step <attribute> <delta> [-d <display>]
+  mondialctl mute on|off|toggle [-d <display>]
+  mondialctl doctor [--json]
+
+ATTRIBUTES
+  brightness | helligkeit     brightness in percent
+  volume | lautstaerke        volume in percent
+  contrast | kontrast         contrast in percent
+  mute                        mute state (on/off/toggle)
+
+DISPLAY (-d)
+  1, 2, 3 ...                 index from "mondialctl list"
+  <uuid>                      UUID (a substring is enough)
+  <name>                      part of the name, e.g. "LG"
+
+EXAMPLES
+  mondialctl list
+  mondialctl get brightness
+  mondialctl set volume 35
+  mondialctl step brightness -6
+  mondialctl mute toggle
+  mondialctl set brightness 40 -d "LG"
+
+OPTIONS
+  --json                      machine readable output
+  -h, --help                  this help
+"""
+
+func pad(_ text: String, _ width: Int = 16) -> String {
+    text.padding(toLength: width, withPad: " ", startingAt: 0)
+}
+
+let usage = UILanguage.isGerman ? usageGerman : usageEnglish
+
 // MARK: - Argument parsing
 
 var positional: [String] = []
@@ -64,7 +105,7 @@ while index < arguments.count {
     switch argument {
     case "-d", "--display":
         index += 1
-        guard index < arguments.count else { fail("Nach \(argument) fehlt der Bildschirm.") }
+        guard index < arguments.count else { fail(L("Nach %@ fehlt der Bildschirm.", "Missing a display after %@", argument)) }
         displaySelector = arguments[index]
     case "--json":
         wantsJSON = true
@@ -95,7 +136,7 @@ func selectDisplay(from displays: [PhysicalDisplay], selector: String?) -> Physi
     guard let selector, !selector.isEmpty else {
         if let external = displays.first(where: { !$0.isBuiltin && $0.hasDDC }) { return external }
         if let external = displays.first(where: { !$0.isBuiltin }) { return external }
-        guard let first = displays.first else { fail("Kein Bildschirm gefunden.") }
+        guard let first = displays.first else { fail(L("Kein Bildschirm gefunden.", "No display found.")) }
         return first
     }
 
@@ -110,7 +151,7 @@ func selectDisplay(from displays: [PhysicalDisplay], selector: String?) -> Physi
     if let match = displays.first(where: { $0.name.lowercased().contains(lowered) }) {
         return match
     }
-    fail("Bildschirm \"\(selector)\" nicht gefunden. Nutze \"mondialctl list\".")
+    fail(L("Bildschirm \"%@\" nicht gefunden. Nutze \"mondialctl list\".", "Display \"%@\" not found. Try \"mondialctl list\".", selector))
 }
 
 func parseAttribute(_ raw: String) -> VCP {
@@ -119,7 +160,7 @@ func parseAttribute(_ raw: String) -> VCP {
     case "volume", "lautstaerke", "lautstärke", "v", "l": return .volume
     case "contrast", "kontrast", "c": return .contrast
     case "mute", "stumm": return .mute
-    default: fail("Unbekanntes Attribut \"\(raw)\".")
+    default: fail(L("Unbekanntes Attribut \"%@\".", "Unknown attribute \"%@\".", raw))
     }
 }
 
@@ -164,7 +205,7 @@ func runList() {
     }
 
     guard !displays.isEmpty else {
-        writeErr("Kein Bildschirm gefunden.\n")
+        writeErr("\(L("Kein Bildschirm gefunden.", "No display found."))\n")
         exit(1)
     }
 
@@ -172,13 +213,13 @@ func runList() {
         let brightness = display.read(.brightness)
         let volume = display.read(.volume)
         var details: [String] = []
-        details.append(display.isBuiltin ? "intern" : "extern")
-        details.append(display.hasDDC ? "DDC" : "kein DDC")
+        details.append(display.isBuiltin ? L("intern", "internal") : L("extern", "external"))
+        details.append(display.hasDDC ? "DDC" : L("kein DDC", "no DDC"))
         if let brightness {
-            details.append("Helligkeit \(percentString(current: brightness.current, max: brightness.max)) %")
+            details.append("\(L("Helligkeit", "brightness")) \(percentString(current: brightness.current, max: brightness.max)) %")
         }
         if let volume {
-            details.append("Lautstärke \(percentString(current: volume.current, max: volume.max)) %")
+            details.append("\(L("Lautstärke", "volume")) \(percentString(current: volume.current, max: volume.max)) %")
         }
         writeOut("[\(offset + 1)] \(display.name)\n")
         writeOut("    \(details.joined(separator: " · "))\n")
@@ -188,13 +229,13 @@ func runList() {
 }
 
 func runGet() {
-    guard positional.count >= 2 else { fail("Aufruf: mondialctl get <attribut>") }
+    guard positional.count >= 2 else { fail(L("Aufruf: mondialctl get <attribut>", "Usage: mondialctl get <attribute>")) }
     let attribute = parseAttribute(positional[1])
     let display = selectDisplay(from: allDisplays(), selector: displaySelector)
 
-    guard display.hasDDC else { fail("\(display.name) unterstützt kein DDC/CI.") }
+    guard display.hasDDC else { fail(L("%@ unterstützt kein DDC/CI.", "%@ does not support DDC/CI.", display.name)) }
     guard let reply = display.read(attribute) else {
-        fail("\(display.name) antwortet nicht auf \(attribute.localizedName).", code: 2)
+        fail(L("%@ antwortet nicht auf %@.", "%@ does not answer for %@.", display.name, attribute.localizedName), code: 2)
     }
 
     switch attribute {
@@ -207,12 +248,12 @@ func runGet() {
 }
 
 func runSet() {
-    guard positional.count >= 3 else { fail("Aufruf: mondialctl set <attribut> <wert>") }
+    guard positional.count >= 3 else { fail(L("Aufruf: mondialctl set <attribut> <wert>", "Usage: mondialctl set <attribute> <value>")) }
     let attribute = parseAttribute(positional[1])
     let value = positional[2]
     let display = selectDisplay(from: allDisplays(), selector: displaySelector)
 
-    guard display.hasDDC else { fail("\(display.name) unterstützt kein DDC/CI.") }
+    guard display.hasDDC else { fail(L("%@ unterstützt kein DDC/CI.", "%@ does not support DDC/CI.", display.name)) }
 
     if attribute == .mute {
         let target: UInt16
@@ -220,46 +261,46 @@ func runSet() {
         case "on", "an", "1", "true": target = 1
         case "off", "aus", "2", "false": target = 2
         case "toggle": target = (display.read(.mute)?.current == 1) ? 2 : 1
-        default: fail("Für \"mute\" erwarte ich on, off oder toggle.")
+        default: fail(L("Für \"mute\" erwarte ich on, off oder toggle.", "For \"mute\" use on, off or toggle."))
         }
-        guard display.write(.mute, value: target) else { fail("Schreiben fehlgeschlagen.", code: 2) }
+        guard display.write(.mute, value: target) else { fail(L("Schreiben fehlgeschlagen.", "Writing failed."), code: 2) }
         writeOut(target == 1 ? "on\n" : "off\n")
         exit(0)
     }
 
     guard let percent = Double(value.replacingOccurrences(of: "%", with: "")) else {
-        fail("\"\(value)\" ist keine Zahl.")
+        fail(L("\"%@\" ist keine Zahl.", "\"%@\" is not a number.", value))
     }
     let clamped = min(100, max(0, percent))
     let maxValue = display.read(attribute)?.max ?? 100
     let raw = UInt16((clamped / 100.0 * Double(maxValue)).rounded())
 
-    guard display.write(attribute, value: raw) else { fail("Schreiben fehlgeschlagen.", code: 2) }
+    guard display.write(attribute, value: raw) else { fail(L("Schreiben fehlgeschlagen.", "Writing failed."), code: 2) }
     writeOut("\(Int(clamped.rounded()))\n")
     exit(0)
 }
 
 func runStep() {
-    guard positional.count >= 3 else { fail("Aufruf: mondialctl step <attribut> <delta>") }
+    guard positional.count >= 3 else { fail(L("Aufruf: mondialctl step <attribut> <delta>", "Usage: mondialctl step <attribute> <delta>")) }
     let attribute = parseAttribute(positional[1])
     if attribute == .mute {
         let display = selectDisplay(from: allDisplays(), selector: displaySelector)
         let current = display.read(.mute)?.current ?? 2
         let target: UInt16 = current == 1 ? 2 : 1
-        guard display.write(.mute, value: target) else { fail("Schreiben fehlgeschlagen.", code: 2) }
+        guard display.write(.mute, value: target) else { fail(L("Schreiben fehlgeschlagen.", "Writing failed."), code: 2) }
         writeOut(target == 1 ? "on\n" : "off\n")
         exit(0)
     }
 
-    guard let delta = Double(positional[2]) else { fail("\"\(positional[2])\" ist keine Zahl.") }
+    guard let delta = Double(positional[2]) else { fail(L("\"%@\" ist keine Zahl.", "\"%@\" is not a number.", positional[2])) }
     let display = selectDisplay(from: allDisplays(), selector: displaySelector)
-    guard display.hasDDC else { fail("\(display.name) unterstützt kein DDC/CI.") }
-    guard let reply = display.read(attribute) else { fail("Lesen fehlgeschlagen.", code: 2) }
+    guard display.hasDDC else { fail(L("%@ unterstützt kein DDC/CI.", "%@ does not support DDC/CI.", display.name)) }
+    guard let reply = display.read(attribute) else { fail(L("Lesen fehlgeschlagen.", "Reading failed."), code: 2) }
 
     let currentPercent = Double(reply.current) / Double(reply.max) * 100
     let targetPercent = min(100, max(0, currentPercent + delta))
     let raw = UInt16((targetPercent / 100.0 * Double(reply.max)).rounded())
-    guard display.write(attribute, value: raw) else { fail("Schreiben fehlgeschlagen.", code: 2) }
+    guard display.write(attribute, value: raw) else { fail(L("Schreiben fehlgeschlagen.", "Writing failed."), code: 2) }
     writeOut("\(Int(targetPercent.rounded()))\n")
     exit(0)
 }
@@ -267,17 +308,17 @@ func runStep() {
 func runMute() {
     let value = positional.count >= 2 ? positional[1] : "toggle"
     let display = selectDisplay(from: allDisplays(), selector: displaySelector)
-    guard display.hasDDC else { fail("\(display.name) unterstützt kein DDC/CI.") }
+    guard display.hasDDC else { fail(L("%@ unterstützt kein DDC/CI.", "%@ does not support DDC/CI.", display.name)) }
 
     let target: UInt16
     switch value.lowercased() {
     case "on", "an", "1", "true": target = 1
     case "off", "aus", "2", "false": target = 2
     case "toggle": target = (display.read(.mute)?.current == 1) ? 2 : 1
-    default: fail("Für \"mute\" erwarte ich on, off oder toggle.")
+    default: fail(L("Für \"mute\" erwarte ich on, off oder toggle.", "For \"mute\" use on, off or toggle."))
     }
 
-    guard display.write(.mute, value: target) else { fail("Schreiben fehlgeschlagen.", code: 2) }
+    guard display.write(.mute, value: target) else { fail(L("Schreiben fehlgeschlagen.", "Writing failed."), code: 2) }
     writeOut(target == 1 ? "on\n" : "off\n")
     exit(0)
 }
@@ -317,16 +358,16 @@ func runDoctor() {
 
     writeOut("MonDial \(MonDialVersion.string)\n")
     writeOut("System          \(Diagnostics.operatingSystem)\n")
-    writeOut("Architektur     \(Diagnostics.architecture)\n")
-    writeOut("DDC-Backend     \(backend)\n")
-    writeOut("Bildschirme     \(displays.count)\n\n")
+    writeOut("\(pad(L("Architektur", "Architecture")))\(Diagnostics.architecture)\n")
+    writeOut("\(pad(L("DDC-Backend", "DDC backend")))\(backend)\n")
+    writeOut("\(pad(L("Bildschirme", "Displays")))\(displays.count)\n\n")
 
     for (offset, display) in displays.enumerated() {
         writeOut("[\(offset + 1)] \(display.name)\n")
         writeOut("    UUID        \(display.id)\n")
         writeOut("    Display-ID  \(display.displayID)\n")
         writeOut("    Vendor      \(display.vendor) / Model \(display.model) / Serial \(display.serial)\n")
-        writeOut("    Typ         \(display.isBuiltin ? "intern" : "extern")\n")
+        writeOut("    \(pad(L("Typ", "Type"), 12))\(display.isBuiltin ? L("intern", "internal") : L("extern", "external"))\n")
         writeOut("    Transport   \(display.debugDescription)\n")
 
         for attribute in [VCP.brightness, .contrast, .volume, .mute] {
@@ -336,20 +377,23 @@ func runDoctor() {
             let label = attribute.localizedName.padding(toLength: 12, withPad: " ", startingAt: 0)
             if let reply {
                 let value = attribute == .mute
-                    ? (reply.current == 1 ? "an" : "aus")
+                    ? (reply.current == 1 ? L("an", "on") : L("aus", "off"))
                     : "\(percentString(current: reply.current, max: reply.max)) % (max \(reply.max))"
                 writeOut("    \(label)\(value)  [\(Int(duration)) ms]\n")
             } else {
-                writeOut("    \(label)keine Antwort  [\(Int(duration)) ms]\n")
+                writeOut("    \(label)\(L("keine Antwort", "no answer"))  [\(Int(duration)) ms]\n")
             }
         }
         writeOut("\n")
     }
 
     if displays.allSatisfy({ !$0.hasDDC }) {
-        writeOut("Hinweis: kein Bildschirm hat einen DDC-Transport. Prüfe, ob im Monitor-OSD\n")
-        writeOut("\"DDC/CI\" aktiviert ist und ob der Monitor per DisplayPort, USB-C oder HDMI\n")
-        writeOut("angeschlossen ist (Adapter können DDC blockieren).\n")
+        writeOut(L("Hinweis: kein Bildschirm hat einen DDC-Transport. Prüfe, ob im Monitor-OSD\n",
+                   "Note: no display has a DDC transport. Check whether \"DDC/CI\" is enabled in\n"))
+        writeOut(L("\"DDC/CI\" aktiviert ist und ob der Monitor per DisplayPort, USB-C oder HDMI\n",
+                   "the monitor menu and whether the display is connected through DisplayPort,\n"))
+        writeOut(L("angeschlossen ist (Adapter können DDC blockieren).\n",
+                   "USB-C or HDMI (adapters can block DDC).\n"))
     }
     exit(0)
 }
@@ -371,5 +415,5 @@ case "help":
     writeOut(usage)
     exit(0)
 default:
-    fail("Unbekanntes Kommando \"\(command)\". Nutze --help.")
+    fail(L("Unbekanntes Kommando \"%@\". Nutze --help.", "Unknown command \"%@\". Try --help.", command))
 }

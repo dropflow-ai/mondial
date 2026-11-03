@@ -90,17 +90,17 @@ public final class DisplayController: ObservableObject, Identifiable {
                 if self.display.hasDDC {
                     self.usesSoftwareDimming = (brightnessValue == nil || self.ddcBrightnessIneffective) && !self.writeOnlyBrightness
                     if self.ddcBrightnessIneffective {
-                        self.statusMessage = "DDC wirkungslos – Software-Dimmung"
+                        self.statusMessage = L("DDC wirkungslos – Software-Dimmung", "DDC ineffective, dimming in software")
                     } else if brightnessValue != nil {
                         self.statusMessage = ""
                     } else if self.writeOnlyBrightness {
-                        self.statusMessage = "DDC (nur schreiben)"
+                        self.statusMessage = L("DDC (nur schreiben)", "DDC (write only)")
                     } else {
-                        self.statusMessage = "DDC ohne Rückmeldung"
+                        self.statusMessage = L("DDC ohne Rückmeldung", "DDC, no reply")
                     }
                 } else {
                     self.usesSoftwareDimming = true
-                    self.statusMessage = "kein DDC"
+                    self.statusMessage = L("kein DDC", "no DDC")
                 }
                 self.isReady = true
             }
@@ -155,7 +155,7 @@ public final class DisplayController: ObservableObject, Identifiable {
         forceSoftwareDimming = enabled
         if enabled {
             usesSoftwareDimming = true
-            statusMessage = "Software-Dimmung (erzwungen)"
+            statusMessage = L("Software-Dimmung (erzwungen)", "software dimming (forced)")
             SoftwareBrightness.apply(displayID: displayID, percent: brightness)
         } else {
             SoftwareBrightness.reset(displayID: displayID)
@@ -251,7 +251,7 @@ public final class DisplayController: ObservableObject, Identifiable {
                             ddcBrightnessIneffective = true
                             DispatchQueue.main.async {
                                 self.usesSoftwareDimming = true
-                                self.statusMessage = "DDC wirkungslos – Software-Dimmung"
+                                self.statusMessage = L("DDC wirkungslos – Software-Dimmung", "DDC ineffective, dimming in software")
                             }
                             SoftwareBrightness.apply(displayID: displayID, percent: percent)
                         }
@@ -262,7 +262,7 @@ public final class DisplayController: ObservableObject, Identifiable {
                         self.writeOnlyBrightness = true
                         self.supportsBrightness = true
                         self.usesSoftwareDimming = false
-                        self.statusMessage = "DDC (nur schreiben)"
+                        self.statusMessage = L("DDC (nur schreiben)", "DDC (write only)")
                     }
                 }
                 return
